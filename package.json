@@ -1,6 +1,6 @@
 {
   "name": "drachtio-modesl",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "FreeSWITCH ESL Node.js Implementation",
   "keywords": [
     "freeswitch",
