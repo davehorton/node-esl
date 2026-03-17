@@ -1,15 +1,16 @@
-var data = require('../../fixtures/data'),
-    heads = JSON.parse(data.event.json),
-    macros = require('../../fixtures/macros'),
-    Parser = require('../../../lib/esl/Parser'),
-    parser, socket;
+const data = require('../../fixtures/data');
+const heads = JSON.parse(data.event.json);
+const macros = require('../../fixtures/macros');
+const Parser = require('../../../lib/esl/Parser');
+
+let parser, socket;
 
 describe('esl.Parser', function() {
-    var serverSocket;
+    let serverSocket;
 
     before(function(done) {
         macros.getEchoServerSocket(function(err, client, server) {
-            if(err) return done(err);
+            if (err) return done(err);
 
             socket = client;
             serverSocket = server;
@@ -51,13 +52,13 @@ function describeEvents(streamData) {
 
             //make socket get only 1 line at a time, to test the parser
             //gleaning only parts at a time
-            (function writeSocketLinesAsync(socket, lns, i) {
-                if(i === lns.length) return;
+            (function writeSocketLinesAsync(sock, lns, i) {
+                if (i === lns.length) return;
 
-                socket.write(lns[i] + '\n');
+                sock.write(lns[i] + '\n');
 
                 process.nextTick(function() {
-                    writeSocketLinesAsync(socket, lns, ++i);
+                    writeSocketLinesAsync(sock, lns, ++i);
                 });
             })(socket, streamData.split('\n'), 0);
         });
@@ -77,7 +78,7 @@ function testParserEvent(done, evt) {
     expect(evt.getBody()).to.equal(heads._body);
 
     //content type
-    if(!heads['Content-Type'])
+    if (!heads['Content-Type'])
         expect(evt.getHeader('Content-Type')).to.be.null;
     else
         expect(evt.getHeader('Content-Type')).to.equal(heads['Content-Type']);

@@ -1,4 +1,4 @@
-var data = {
+const data = {
     event: {
         json: JSON.stringify({
             'Event-Name': 'CUSTOM',
@@ -145,7 +145,7 @@ var data = {
             'Control: full',
             ''
         ].join('\n'),
-        cmdReply: function(msg, err) {
+        cmdReply(msg, err) {
             return [
                 'Content-Type: command/reply',
                 'Reply-Text: ' + (err ? '-ERR ' : '+OK ') + (msg || 'accepted'),

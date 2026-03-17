@@ -1,15 +1,15 @@
-var data = require('../../fixtures/data'),
-    heads = JSON.parse(data.event.json),
-    macros = require('../../fixtures/macros'),
-    Server = require('../../../lib/esl/Server'),
-    net = require('net');
+const data = require('../../fixtures/data');
+const heads = JSON.parse(data.event.json);
+const macros = require('../../fixtures/macros');
+const Server = require('../../../lib/esl/Server');
+const net = require('net');
 
 describe('esl.Server', function() {
     it('should have the correct exports', function(done) {
         //is function
         expect(Server).to.be.a('function');
 
-        var server = new Server();
+        const server = new Server();
 
         testServerInstance(server);
 
@@ -20,7 +20,7 @@ describe('esl.Server', function() {
     });
 
     it('should work with only a callback set', function(done) {
-        var server = new Server(function() {
+        const server = new Server(function() {
             server.close();
             done();
         });
@@ -29,13 +29,12 @@ describe('esl.Server', function() {
     });
 
     it('should use a custom server instance', function(done) {
-        macros.getEchoServerSocket(function(err, client, server) {
-            if(err) return done(err);
+        macros.getServer(function(err, server) {
+            if (err) return done(err);
 
-            var eslServer = new Server({ server: server }, function() {
+            const eslServer = new Server({ server: server }, function() {
                 expect(eslServer.server).to.equal(server);
 
-                client.end();
                 eslServer.close();
 
                 done();
@@ -44,11 +43,11 @@ describe('esl.Server', function() {
     });
 
     describe('server events', function() {
-        var server;
+        let server;
 
         before(function(done) {
             macros.getServer(function(err, netServer) {
-                if(err) return done(err);
+                if (err) return done(err);
 
                 server = new Server({ server: netServer }, function() {
                     done();
@@ -74,11 +73,11 @@ describe('esl.Server', function() {
     });
 
     describe('bind events', function() {
-        var evtServer;
+        let evtServer;
 
         before(function(done) {
             macros.getServer(function(err, server) {
-                if(err) return done(err);
+                if (err) return done(err);
 
                 evtServer = new Server({ server: server, myevents: true }, function() {
                     done();
@@ -91,7 +90,7 @@ describe('esl.Server', function() {
         });
 
         it('should emit connection::open event', function(done) {
-            testServerEvent(done, evtServer, 'connection::open')
+            testServerEvent(done, evtServer, 'connection::open');
         });
 
         it('should emit connection::ready event', function(done) {
@@ -99,7 +98,7 @@ describe('esl.Server', function() {
         });
 
         it('should emit connection::close event', function(done) {
-            testServerEvent(done, evtServer, 'connection::close')
+            testServerEvent(done, evtServer, 'connection::close');
         });
 
         after(function() {
@@ -109,7 +108,7 @@ describe('esl.Server', function() {
 });
 
 function testServerEvent(done, server, name, channelData) {
-    var to;
+    let to;
 
     //setup event callback
     server.once(name, function(c, id) {
@@ -121,27 +120,27 @@ function testServerEvent(done, server, name, channelData) {
 
     //setup timeout
     to = setTimeout(function() {
-        done(new Error("Connection Timeout"));
+        done(new Error('Connection Timeout'));
     }, 1500);
 
     //create a connection
-    var socket = net.connect({ port: server.port });
+    const socket = net.connect({ port: server.port });
 
-    if(channelData) {
+    if (channelData) {
         //when esl.Connection sends 'connect' event
         socket.on('data', function(buffer) {
-            var str = buffer.toString();
+            const str = buffer.toString();
 
             console.log(str);
 
-            if(server.bindEvents) {
-                if(str.indexOf('connect') !== -1) {
+            if (server.bindEvents) {
+                if (str.indexOf('connect') !== -1) {
                     socket.write(channelData + '\n');
-                } else if(str.indexOf('myevents') !== -1) {
+                } else if (str.indexOf('myevents') !== -1) {
                     socket.write(channelData + '\n');
                     socket.end();
                 }
-            } else if(str.indexOf('connect') !== -1) {
+            } else if (str.indexOf('connect') !== -1) {
                 //write channel data to it
                 socket.write(channelData + '\n');
                 socket.end();

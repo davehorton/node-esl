@@ -17,6 +17,11 @@ Desktop.ini
 *~
 \#*#
 
+# IDE / AI tooling
+.vscode/
+CLAUDE.md
+
 # node.js common ignores
 node_modules/
 npm-debug.log
+examples/*/package-lock.json

@@ -1,27 +1,26 @@
-var assert = require('assert'),
-    net = require('net');
+const net = require('net');
 
-var macros = module.exports = {
-    testConnSend: function(args, expected, Connection) {
+const macros = module.exports = {
+    testConnSend(args, expected, Connection) {
         return {
             topic: macros.getInboundConnection(Connection, function(o) {
-                var t = this;
-                o.conn.socket.once('data', function(data) {
+                const t = this;
+                o.conn.socket.once('data', (data) => {
                     t.callback(o, data);
                 });
 
-                o.conn.send.apply(o.conn, args);//('send me', { header1: 'val1', header2: 'val2' });
+                o.conn.send.apply(o.conn, args);
             }),
             'writes correct data': function(o, data) {
-                assert.equal(data, expected);//'send me\nheader1: val1\nheader2: val2\n\n');
+                expect(data).to.equal(expected);
                 o.conn.socket.end();
             }
         };
     },
-    nextPort: function(port) {
+    nextPort(port) {
         return port + 1;
     },
-    getServer: function(options, cb) {
+    getServer(options, cb) {
         if (!cb) {
             cb = options;
             options = {};
@@ -29,18 +28,17 @@ var macros = module.exports = {
 
         options.port   = options.port   || 8000;
         options.host   = options.host   || null;
-        options.server = options.server || net.createServer(function(){});
+        options.server = options.server || net.createServer(() => {});
 
         function onListen() {
             options.server.removeListener('error', onError);
-
-            cb(null, options.server)
+            cb(null, options.server);
         }
 
         function onError(err) {
             options.server.removeListener('listening', onListen);
 
-            if(err.code !== 'EADDRINUSE' && err.code !== 'EACCES') {
+            if (err.code !== 'EADDRINUSE' && err.code !== 'EACCES') {
                 return cb(err);
             }
 
@@ -55,27 +53,27 @@ var macros = module.exports = {
     //macro for creating an echo server and socket connected to it
     //useful for being able to send data to a socket listener by writing
     //to that socket
-    getEchoServerSocket: function(cb) {
+    getEchoServerSocket(cb) {
         //find an open port
-        macros.getServer(function(err, server) {
-            if(err) return cb(err);
+        macros.getServer((err, server) => {
+            if (err) return cb(err);
 
             //echo anything on the server connection
-            server.on('connection', function(c) {
+            server.on('connection', (c) => {
                 c.pipe(c);
             });
 
             //create a client socket to the server
-            var client = net.connect({ port: server.address().port }, function() {
-                if(cb) cb(null, client, server);
+            const client = net.connect({ port: server.address().port }, () => {
+                if (cb) cb(null, client, server);
             });
         });
     },
-    getInboundConnection: function(Conn, cb) {
-        macros.getEchoServerSocket(function(err, client, server) {
-            var conn = new Conn('localhost', server.address().port, 'ClueCon');
+    getInboundConnection(Conn, cb) {
+        macros.getEchoServerSocket((err, client, server) => {
+            const conn = new Conn('localhost', server.address().port, 'ClueCon');
 
-            if(cb) cb(err, conn);
+            if (cb) cb(err, conn);
         });
     }
 };
