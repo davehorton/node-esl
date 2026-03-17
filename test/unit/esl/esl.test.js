@@ -1,4 +1,4 @@
-var esl = require('../../../lib/esl/esl');
+const esl = require('../../../lib/esl/esl');
 
 describe('Event Socket Library', function() {
     it('should have the correct exports', function() {
@@ -19,7 +19,7 @@ describe('Event Socket Library', function() {
     });
 
     describe('logger', function() {
-        var evtObj;
+        let evtObj;
 
         beforeEach(function() {
             evtObj = new esl.Event({

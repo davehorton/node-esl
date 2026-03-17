@@ -1,4 +1,4 @@
-var esl = require('../../lib/index');
+const esl = require('../../lib/index');
 
 describe('Event Socket Library', function() {
     it('should have the correct exports', function() {

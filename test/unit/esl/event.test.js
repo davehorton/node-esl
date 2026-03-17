@@ -1,7 +1,7 @@
-var data = require('../../fixtures/data'),
-    heads = JSON.parse(data.event.json),
-    encodeXml = require('../../../lib/util/xml').encodeXml,
-    Event = require('../../../lib/esl/Event');
+const data = require('../../fixtures/data');
+const heads = JSON.parse(data.event.json);
+const encodeXml = require('../../../lib/util/xml').encodeXml;
+const Event = require('../../../lib/esl/Event');
 
 describe('esl.Event', function() {
     it('should have the correct exports', function() {
@@ -12,7 +12,7 @@ describe('esl.Event', function() {
         expect(Event.PRIORITY.NORMAL).to.equal('NORMAL');
         expect(Event.PRIORITY.HIGH).to.equal('HIGH');
 
-        var evt = new Event();
+        const evt = new Event();
 
         //instance public functions
         expect(evt.serialize).to.be.a('function');
@@ -39,7 +39,7 @@ describe('esl.Event', function() {
 
     describe('Constructor', function() {
         it('should properly construct with ()', function() {
-            var e = new Event();
+            const e = new Event();
 
             expect(e.getType()).to.equal('');
             expect(e.type).to.equal('');
@@ -50,7 +50,7 @@ describe('esl.Event', function() {
         });
 
         it('should properly construct with (type)', function() {
-            var e = new Event(heads['Event-Name']);
+            const e = new Event(heads['Event-Name']);
 
             expect(e.getType()).to.equal(heads['Event-Name']);
             expect(e.type).to.equal(heads['Event-Name']);
@@ -60,7 +60,7 @@ describe('esl.Event', function() {
         });
 
         it('should properly construct with (type, subclass)', function() {
-            var e = new Event(heads['Event-Name'], heads['Event-Subclass']);
+            const e = new Event(heads['Event-Name'], heads['Event-Subclass']);
 
             expect(e.getType()).to.equal(heads['Event-Name']);
             expect(e.type).to.equal(heads['Event-Name']);
@@ -73,7 +73,7 @@ describe('esl.Event', function() {
         });
 
         it('should properly construct with (headers)', function() {
-            var e = new Event({ 'Event-Name': heads['Event-Name'], 'Reply-Text': '+OK' });
+            const e = new Event({ 'Event-Name': heads['Event-Name'], 'Reply-Text': '+OK' });
 
             expect(e.getType()).to.equal(heads['Event-Name']);
             expect(e.type).to.equal(heads['Event-Name']);
@@ -85,7 +85,7 @@ describe('esl.Event', function() {
         });
 
         it('should properly construct with (headers [with Event-Subclass])', function() {
-            var e = new Event({
+            const e = new Event({
                 'Event-Name': heads['Event-Name'],
                 'Reply-Text': '+OK',
                 'Event-Subclass': heads['Event-Subclass']
@@ -103,7 +103,7 @@ describe('esl.Event', function() {
         });
 
         it('should properly construct with (headers [with _body])', function() {
-            var e = new Event({
+            const e = new Event({
                 'Event-Name': heads['Event-Name'],
                 'Reply-Text': '+OK',
                 '_body': 'some body here'
@@ -119,7 +119,7 @@ describe('esl.Event', function() {
         });
 
         it('should properly construct with (headers, body)', function() {
-            var e = new Event({
+            const e = new Event({
                 'Event-Name': heads['Event-Name'],
                 'Reply-Text': '+OK'
             }, 'some body here');
@@ -134,7 +134,7 @@ describe('esl.Event', function() {
         });
 
         it('should properly construct with (headers [with _body], body)', function() {
-            var e = new Event({
+            const e = new Event({
                 'Event-Name': heads['Event-Name'],
                 'Reply-Text': '+OK',
                 '_body': 'skip me'
@@ -152,7 +152,7 @@ describe('esl.Event', function() {
     });
 
     describe('esl.Event methods', function() {
-        var e = null;
+        let e = null;
 
         beforeEach(function() {
             e = new Event(heads);
@@ -175,7 +175,7 @@ describe('esl.Event', function() {
             it('should serialize into xml', function() {
                 expect(e.serialize('xml')).to.equal(data.event.xml);
 
-                var xmlBody = typeof e.body === 'string' ? encodeXml(e.body) : e.body;
+                const xmlBody = typeof e.body === 'string' ? encodeXml(e.body) : e.body;
                 expect(Buffer.byteLength(xmlBody)).to.equal(e.getHeader('Content-Length'));
             });
         });
@@ -249,7 +249,7 @@ describe('esl.Event', function() {
             it('should move ptr to first header and return its key', function() {
                 expect(e.hPtr).to.be.null;
 
-                var key = e.firstHeader();
+                const key = e.firstHeader();
 
                 expect(e.hPtr).to.equal(0);
                 expect(key).to.equal(e.headers[0].name);
@@ -263,13 +263,13 @@ describe('esl.Event', function() {
             });
 
             it('should return null if at the end of Headers', function() {
-                var len = Object.keys(heads).length - 1; //dont count _body
+                const len = Object.keys(heads).length - 1; //dont count _body
 
                 //init ptr
                 e.firstHeader();
 
                 //go through each header
-                for(var i = 0; i <= len; ++i) {
+                for (let i = 0; i <= len; ++i) {
                     e.nextHeader();
                 }
 
@@ -283,7 +283,7 @@ describe('esl.Event', function() {
 
                 expect(e.hPtr).to.equal(0);
 
-                var key = e.nextHeader();
+                const key = e.nextHeader();
 
                 expect(e.hPtr).to.equal(1);
                 expect(key).to.equal(e.headers[1].name);

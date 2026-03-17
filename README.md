@@ -1,76 +1,155 @@
-## FreeSWITCH ESL Bindings for Node.js [![Build Status](https://travis-ci.org/englercj/node-esl.svg?branch=master)](https://travis-ci.org/englercj/node-esl)
+# FreeSWITCH ESL Bindings for Node.js
 
-A Library for handling low-level FreeSWITCH ESLconnections, and associated ESLevents.
+A library for handling low-level FreeSWITCH ESL connections and associated events.
 
-[Documentation](https://github.com/englercj/node-esl/wiki) - [Event Socket Library Spec](http://wiki.freeswitch.org/wiki/Esl)
+Published on npm as [`drachtio-modesl`](https://www.npmjs.com/package/drachtio-modesl).
 
-### Purpose
+Requires Node.js >= 22.
 
-Though there is already a Node.js "library" for this [on github](https://github.com/shimaore/esl),
-it does not actually implement the [Event Socket Library](http://wiki.freeswitch.org/wiki/Event_Socket_Library)
-interface, and instead has it's own thing. This library was written to implement the full Event
-Socket Library interface, and provide a meaningful semantic when dealing with FreeSWITCH in Node.js.
+## Purpose
 
-This library supports both "Inbound" (connection going _into_ FreeSWITCH) and "Outbound" (connections
-coming _out_ of FreeSWITCH). Also included is a helper `esl.Server` object that manages multiple
-`esl.Connection` objects; making it trivial to have multiple "Outbound" connections from FreeSWITCH.
+This library implements the full [Event Socket Library](http://wiki.freeswitch.org/wiki/Event_Socket_Library)
+interface, providing a meaningful semantic when dealing with FreeSWITCH in Node.js.
 
-### Installation
+It supports both **Inbound** (connection going _into_ FreeSWITCH) and **Outbound** (connections
+coming _out_ of FreeSWITCH). The `esl.Server` helper manages multiple `esl.Connection` objects,
+making it trivial to handle many simultaneous Outbound connections from FreeSWITCH.
 
-The easiest way to install is via npm:
+## Installation
 
 ```shell
-npm install modesl
+npm install drachtio-modesl
 ```
 
-As in "Mod ESL".
+## Usage
 
-### Usage
+### Inbound Connection
 
-The most basic usage example is to open a connection, and send a status command:
+Connect to FreeSWITCH and send a status command:
 
-```javascript
-var esl = require('modesl'),
-conn = new esl.Connection('127.0.0.1', 8021, 'ClueCon', function() {
-    conn.api('status', function(res) {
-        //res is an esl.Event instance
+```js
+const { Connection } = require('drachtio-modesl');
+
+const conn = new Connection('127.0.0.1', 8021, 'ClueCon', () => {
+    conn.api('status', (res) => {
+        // res is an esl.Event instance
         console.log(res.getBody());
     });
 });
 ```
 
-Something to be aware of is that _all_ functions that interact with FreeSWITCH are asynchronous on the Library side.
-However, there are many functions (`api`, `execute`, etc) that are synchronous on the FreeSWITCH side. Because of this
-the event you will get back in your callback on, for example, `api` and the same command on `bgapi` will be different.
+### Outbound Connection
 
-The `api` command's callback will be executed immediately when the `command/reply` message is received, with all the
-returned data. However, that same command using `bgapi` will _not_ call the callback when the `command/reply` message
-is received, this is because FreeSWITCH returns the `command/reply` message immediately for background commands __before
-the command is run__. The Library will automatically track the command, and call the callback on the `BACKGROUND_JOB`
-message that denotes a completed Background Job.
+Listen for connections from FreeSWITCH:
 
-The body for the same command issued with `api` and `bgapi` should be the same; even when the headers, event type, and
-time it takes for the callback to execute are different. The Library attempts to smooth these differences out by providing
-a common interface, even though behind the scenes things are quite different.
+```js
+const { Server } = require('drachtio-modesl');
 
-### Tests
+const server = new Server({ port: 8022 }, () => {
+    console.log('ESL server listening on port 8022');
+});
 
-To run the tests included with the module simply run the following in the root of the `modesl` folder:
+server.on('connection::ready', (conn, id) => {
+    console.log(`New connection: ${id}`);
+    conn.execute('answer', '', () => {
+        conn.execute('playback', '/path/to/file.wav');
+    });
+});
+```
+
+### api vs bgapi
+
+All functions that interact with FreeSWITCH are asynchronous on the library side.
+However, many commands (`api`, `execute`, etc.) are synchronous on the FreeSWITCH side.
+
+- **`api`** — the callback fires immediately when the `command/reply` message is received, with all returned data.
+- **`bgapi`** — FreeSWITCH returns `command/reply` immediately _before the command runs_. The library automatically tracks the command and fires the callback when the `BACKGROUND_JOB` message arrives.
+
+The body for the same command issued via `api` and `bgapi` should be identical, even though headers, event type, and timing differ. The library smooths out these differences behind a common interface.
+
+## API
+
+### `Connection`
+
+The main class. Operates in two modes:
+
+- **Inbound**: `new Connection(host, port, password[, callback])` — connects to the FreeSWITCH ESL port.
+- **Outbound**: `new Connection(socket[, callback])` — wraps a socket from FreeSWITCH (used by `Server`).
+
+Key methods:
+
+| Method | Description |
+|--------|-------------|
+| `send(command[, args])` | Send a command (fire-and-forget) |
+| `sendRecv(command[, args], callback)` | Send a command and wait for a reply |
+| `api(command[, args], callback)` | Send a blocking API command |
+| `bgapi(command[, args][, jobid], callback)` | Send a background API command |
+| `execute(app[, arg][, uuid], callback)` | Execute a dialplan application |
+| `subscribe(events[, callback])` | Subscribe to events (JSON format) |
+| `filter(header, value[, callback])` | Filter events |
+| `disconnect()` | Close the connection |
+
+Key events:
+
+| Event | Description |
+|-------|-------------|
+| `esl::ready` | Connection is authenticated and ready |
+| `esl::event::*` | Wildcard event namespace |
+| `esl::end` | Connection closed |
+| `error` | Error occurred |
+
+Inbound connections automatically reconnect with exponential backoff.
+
+### `Server`
+
+Listens for Outbound connections from FreeSWITCH.
+
+```js
+new Server({ port, host, server, myevents })
+```
+
+| Event | Description |
+|-------|-------------|
+| `connection::open` | New socket connection |
+| `connection::ready` | Connection authenticated and ready |
+| `connection::close` | Connection closed |
+
+### `Event`
+
+Represents an ESL event (headers + body). Supports serialization to plain text, JSON, and XML.
+
+| Method | Description |
+|--------|-------------|
+| `getHeader(name)` | Get a header value |
+| `getBody()` | Get the event body |
+| `getType()` | Get the event type |
+| `addHeader(name, value)` | Add or update a header |
+| `delHeader(name)` | Delete a header |
+| `addBody(value)` | Append to the body |
+| `serialize([format])` | Serialize to `'plain'`, `'json'`, or `'xml'` |
+
+## Tests
 
 ```shell
 npm test
 ```
 
-### TODO
+## Benchmarks
 
- - Add tests for
-  * `esl.Connection`
- - Add more examples for
-  * IVR App
-  * Faxing App
- - Add more abstraction/sugar functions
- - Better error messages on `error` event
+Run the parser and event benchmark suite:
 
-### License
+```shell
+node bench/parser.js
+```
 
-This module is distributed under the [Mozilla Public License 2.0](http://www.mozilla.org/MPL/2.0/).
+Use `--expose-gc` for memory measurements:
+
+```shell
+node --expose-gc bench/parser.js
+```
+
+This benchmarks the ESL protocol parser and Event class across realistic scenarios: different event types (auth, command/reply, JSON, plain, channel data), full-buffer vs. 64-byte chunked delivery (simulating TCP fragmentation), and Event construction with header lookups.
+
+## License
+
+Dual-licensed under [MPL-2.0](http://www.mozilla.org/MPL/2.0/) or [MIT](https://opensource.org/licenses/MIT), at your option.
